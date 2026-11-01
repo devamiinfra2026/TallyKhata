@@ -1,0 +1,9 @@
+{
+  "name": "TallyKhata",
+  "short_name": "TallyKhata",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f3f5fa",
+  "theme_color": "#243b91",
+  "description": "Customer ledger, credit and payment book"
+}

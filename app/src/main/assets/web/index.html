@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#243b91"><meta name="description" content="TallyKhata - simple customer ledger, credit and payment book">
+<link rel="manifest" href="manifest.webmanifest">
+<title>TallyKhata</title>
+<style>
+:root{--navy:#243b91;--blue:#3557c7;--green:#168044;--red:#c53d3d;--ink:#172033;--muted:#667085;--bg:#f3f5fa;--line:#e7eaf1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Arial,sans-serif}
+header{background:linear-gradient(120deg,#243b91,#4263d5);color:white;padding:17px max(16px,env(safe-area-inset-left));position:sticky;top:0;z-index:3;box-shadow:0 3px 12px #101b5030}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{font-size:22px;font-weight:800}.sub{font-size:12px;opacity:.85;margin-top:3px}
+main{max-width:760px;margin:auto;padding:14px 14px 35px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin:0 0 13px;box-shadow:0 3px 12px #18234a08}
+h2{font-size:17px;margin:0 0 13px}h3{font-size:15px;margin:0 0 8px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d9deea;border-radius:10px;background:white;font:inherit;margin:5px 0 10px;color:var(--ink)}
+button{border:0;border-radius:10px;padding:12px 14px;font:700 14px system-ui;cursor:pointer}
+.primary{background:var(--blue);color:white}.green{background:var(--green);color:white}.red{background:var(--red);color:white}.soft{background:#edf1ff;color:var(--navy)}.mutedbtn{background:#eef0f4;color:#344054}
+.full{width:100%}.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{padding:12px 7px;border-radius:12px;color:white;text-align:center;min-width:0}.stat small{display:block;font-size:11px;line-height:1.3}.stat b{display:block;font-size:19px;margin-top:7px;overflow-wrap:anywhere}.s-green{background:#168044}.s-red{background:#c53d3d}.s-blue{background:#3557c7}
+.customer,.txn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}.customer:last-child,.txn:last-child{border-bottom:0}
+.customer .meta,.txn .meta{min-width:0}.customer strong{display:block}.hint{color:var(--muted);font-size:12px;margin-top:3px}
+.pill{display:inline-block;border-radius:30px;padding:4px 8px;background:#eef1f7;color:#475467;font-size:11px}
+.amount{font-weight:800;white-space:nowrap}.credit{color:var(--green)}.payment{color:var(--red)}
+.hidden{display:none!important}.toolbar{display:flex;gap:7px;flex-wrap:wrap}.toolbar button{font-size:12px;padding:9px 11px}
+.empty{text-align:center;color:var(--muted);padding:22px 8px}.back{margin-bottom:10px}
+.tabs{display:flex;gap:7px;margin-bottom:12px}.tabs button{flex:1}.selected{background:var(--navy);color:white}
+footer{text-align:center;color:#98a2b3;font-size:11px;padding:15px}
+small{line-height:1.4}.dangerline{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+@media(max-width:390px){.stat b{font-size:16px}.grid3{gap:5px}.stat{padding:10px 4px}}
+</style>
+</head>
+<body>
+<header><div class="top"><div><div class="brand">📒 TallyKhata</div><div class="sub" id="tagline">Customer ledger made simple</div></div><button class="soft" id="langBtn" onclick="toggleLang()">ગુજરાતી</button></div></header>
+<main>
+<section id="home">
+ <div class="card">
+  <h2 data-i="addCustomer">Add customer / ગ્રાહક ઉમેરો</h2>
+  <input id="custName" data-ph="customerName" placeholder="Customer name">
+  <input id="custPhone" data-ph="phone" placeholder="Mobile number (optional)" inputmode="tel">
+  <button class="primary full" onclick="addCustomer()" data-i="saveCustomer">＋ Save customer</button>
+ </div>
+ <div class="card">
+  <h2 data-i="customers">Customers</h2><input id="search" data-ph="search" placeholder="Search customer..." oninput="renderHome()">
+  <div id="customerList"></div>
+ </div>
+ <div class="card">
+  <h2 data-i="backupTitle">Backup & restore</h2>
+  <div class="toolbar"><button class="soft" onclick="backup()" data-i="backup">Download backup</button><button class="soft" onclick="$('restoreFile').click()" data-i="restore">Restore backup</button><button class="soft" onclick="window.print()" data-i="print">Print / Save PDF</button></div>
+  <input id="restoreFile" class="hidden" type="file" accept="application/json" onchange="restore(event)">
+  <p class="hint" data-i="backupHint">Your records are stored on this device. Keep a backup before changing phones.</p>
+ </div>
+ <div class="card">
+  <h2 data-i="planTitle">TallyKhata plans</h2>
+  <div class="row"><div><b data-i="freePlan">Free</b><p class="hint" data-i="freeDesc">Customer ledger and basic history.</p></div><div><b data-i="premiumPlan">Premium</b><p class="hint" data-i="premiumDesc">Advanced reports and multi-device sync (activation to be connected).</p></div></div>
+  <span class="pill" data-i="demoPlan">Premium screen preview — payments are not enabled in this build</span>
+ </div>
+ <div class="card">
+  <h2 data-i="securityTitle">App lock</h2>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="6" data-ph="pin" placeholder="Set 4–6 digit PIN">
+  <div class="toolbar"><button class="soft" onclick="setPin()" data-i="setPin">Set / change PIN</button><button class="soft" onclick="removePin()" data-i="removePin">Remove PIN</button></div>
+  <p class="hint" data-i="pinHint">PIN is a basic local screen lock, not cloud account security.</p>
+ </div>
+</section>
+<section id="ledger" class="hidden">
+ <button class="soft back" onclick="goHome()" data-i="back">← Customers</button>
+ <div class="card">
+  <h2 id="ledgerName"></h2><div class="hint" id="ledgerPhone"></div>
+  <div class="grid3" style="margin-top:14px">
+   <div class="stat s-green"><small data-i="totalPaid">Total payment</small><b id="sumPaid">₹0</b></div>
+   <div class="stat s-red"><small data-i="totalCredit">Total credit</small><b id="sumCredit">₹0</b></div>
+   <div class="stat s-blue"><small data-i="balance">Balance due</small><b id="sumDue">₹0</b></div>
+  </div>
+ </div>
+ <div class="card">
+  <h2 data-i="newEntry">Add transaction</h2>
+  <input id="txnAmount" type="number" min="0.01" step="0.01" inputmode="decimal" data-ph="amount" placeholder="Amount">
+  <input id="txnNote" data-ph="note" placeholder="Note / description (optional)">
+  <div class="row"><button class="green" onclick="addTxn('credit')" data-i="giveCredit">＋ Give credit</button><button class="red" onclick="addTxn('payment')" data-i="receivePayment">− Receive payment</button></div>
+ </div>
+ <div class="card"><h2 data-i="history">Transaction history</h2><div id="txnList"></div></div>
+ <div class="card dangerline"><button class="mutedbtn full" onclick="editCustomer()" data-i="editCustomer">Edit customer details</button><button class="red full" style="margin-top:8px" onclick="deleteCustomer()" data-i="deleteCustomer">Delete customer account</button></div>
+</section>
+</main><footer> TallyKhata • Local-first ledger • Keep regular backups </footer>
+<script>
+const $=id=>document.getElementById(id),KEY='tallykhata_complete_v2';
+let db=readDB(),active=null,lang=localStorage.getItem('tk_lang')||'en',locked=false;
+if(!['en','gu','hi'].includes(lang))lang='en';
+const words={
+en:{tagline:'Customer ledger made simple',addCustomer:'Add customer',customerName:'Customer name',phone:'Mobile number (optional)',saveCustomer:'＋ Save customer',customers:'Customers',search:'Search customer...',backupTitle:'Backup & restore',backup:'Download backup',restore:'Restore backup',print:'Print / Save PDF',backupHint:'Your records are stored on this device. Keep a backup before changing phones.',planTitle:'TallyKhata plans',freePlan:'Free',freeDesc:'Customer ledger and basic history.',premiumPlan:'Premium',premiumDesc:'Advanced reports and multi-device sync (activation to be connected).',demoPlan:'Premium preview — payments are not enabled in this build',securityTitle:'App lock',pin:'Set 4–6 digit PIN',setPin:'Set / change PIN',removePin:'Remove PIN',pinHint:'PIN is a basic local screen lock, not cloud account security.',back:'← Customers',totalPaid:'Total payment',totalCredit:'Total credit',balance:'Balance due',newEntry:'Add transaction',amount:'Amount',note:'Note / description (optional)',giveCredit:'＋ Give credit',receivePayment:'− Receive payment',history:'Transaction history',editCustomer:'Edit customer details',deleteCustomer:'Delete customer account',noCustomers:'No customers yet. Add your first customer above.',open:'Open',due:'Due',noHistory:'No transactions yet.',credit:'Credit given',payment:'Payment received',delete:'Delete',confirmDeleteTxn:'Delete this transaction?',confirmDeleteCustomer:'Delete this customer and all its transactions?',nameRequired:'Please enter a customer name.',amountRequired:'Enter a valid amount greater than zero.',pinSaved:'PIN saved on this device.',pinRemoved:'PIN removed.',enterPin:'Enter app PIN',wrongPin:'Incorrect PIN.',editName:'New customer name',editPhone:'New mobile number',cancel:'Cancel',ok:'OK',restoreConfirm:'Replace current records with this backup?',restored:'Backup restored.',badBackup:'Invalid backup file.',pinNeed:'Enter a 4–6 digit PIN.'},
+gu:{tagline:'ગ્રાહકના હિસાબ માટે સરળ ખાતાબુક',addCustomer:'નવો ગ્રાહક ઉમેરો',customerName:'ગ્રાહકનું નામ',phone:'મોબાઇલ નંબર (વૈકલ્પિક)',saveCustomer:'＋ ગ્રાહક સેવ કરો',customers:'ગ્રાહકોની યાદી',search:'ગ્રાહક શોધો...',backupTitle:'બેકઅપ અને રિસ્ટોર',backup:'બેકઅપ ડાઉનલોડ',restore:'બેકઅપ પાછો લાવો',print:'પ્રિન્ટ / PDF સેવ',backupHint:'તમારો ડેટા આ ડિવાઇસમાં સેવ થાય છે. ફોન બદલતા પહેલાં બેકઅપ લો.',planTitle:'TallyKhata પ્લાન',freePlan:'ફ્રી',freeDesc:'ગ્રાહક ખાતું અને સામાન્ય હિસ્ટ્રી.',premiumPlan:'પ્રીમિયમ',premiumDesc:'વિગતવાર રિપોર્ટ અને અનેક ડિવાઇસમાં સિંક (કનેક્શન બાકી).',demoPlan:'પ્રીમિયમનું પૂર્વદર્શન — આ વર્ઝનમાં ચુકવણી ચાલુ નથી',securityTitle:'એપ લોક',pin:'4–6 આંકડાનો PIN બનાવો',setPin:'PIN સેટ / બદલો',removePin:'PIN દૂર કરો',pinHint:'આ PIN આ ડિવાઇસ માટેનો સામાન્ય લોક છે, ક્લાઉડ સુરક્ષા નથી.',back:'← ગ્રાહકો',totalPaid:'કુલ ચુકવણી',totalCredit:'કુલ ઉધાર',balance:'બાકી રકમ',newEntry:'નવો હિસાબ ઉમેરો',amount:'રકમ',note:'નોંધ / વિગત (વૈકલ્પિક)',giveCredit:'＋ ઉધાર આપ્યું',receivePayment:'− પેમેન્ટ મળ્યું',history:'હિસાબની હિસ્ટ્રી',editCustomer:'ગ્રાહકની વિગત બદલો',deleteCustomer:'ગ્રાહકનું ખાતું ડિલીટ કરો',noCustomers:'હજુ ગ્રાહક નથી. ઉપરથી પહેલો ગ્રાહક ઉમેરો.',open:'ખાતું ખોલો',due:'બાકી',noHistory:'હજુ કોઈ વ્યવહાર નથી.',credit:'ઉધાર આપ્યું',payment:'પેમેન્ટ મળ્યું',delete:'ડિલીટ',confirmDeleteTxn:'આ વ્યવહાર ડિલીટ કરવો છે?',confirmDeleteCustomer:'આ ગ્રાહક અને તેના બધા વ્યવહાર ડિલીટ કરવા છે?',nameRequired:'ગ્રાહકનું નામ લખો.',amountRequired:'શૂન્યથી વધુ યોગ્ય રકમ લખો.',pinSaved:'આ ડિવાઇસમાં PIN સેવ થયો.',pinRemoved:'PIN દૂર થયો.',enterPin:'એપનો PIN લખો',wrongPin:'ખોટો PIN.',editName:'નવું ગ્રાહક નામ',editPhone:'નવો મોબાઇલ નંબર',cancel:'રદ કરો',ok:'બરાબર',restoreConfirm:'હાલના ડેટાની જગ્યાએ આ બેકઅપ મૂકવો છે?',restored:'બેકઅપ પાછો આવ્યો.',badBackup:'બેકઅપ ફાઇલ યોગ્ય નથી.',pinNeed:'4–6 આંકડાનો PIN લખો.'}
+},
+hi:{tagline:'ग्राहकों का हिसाब रखने की आसान बही',addCustomer:'नया ग्राहक जोड़ें',customerName:'ग्राहक का नाम',phone:'मोबाइल नंबर (वैकल्पिक)',saveCustomer:'＋ ग्राहक सेव करें',customers:'ग्राहकों की सूची',search:'ग्राहक खोजें...',backupTitle:'बैकअप और रीस्टोर',backup:'बैकअप डाउनलोड करें',restore:'बैकअप वापस लाएँ',print:'प्रिंट / PDF सेव करें',backupHint:'आपका रिकॉर्ड इसी डिवाइस में सेव होता है। फोन बदलने से पहले बैकअप लें।',planTitle:'TallyKhata प्लान',freePlan:'मुफ़्त',freeDesc:'ग्राहक खाता और सामान्य हिस्ट्री।',premiumPlan:'प्रीमियम',premiumDesc:'विस्तृत रिपोर्ट और कई डिवाइस में सिंक (कनेक्शन जोड़ा जाना बाकी)।',demoPlan:'प्रीमियम पूर्वावलोकन — इस वर्ज़न में भुगतान सुविधा चालू नहीं है',securityTitle:'ऐप लॉक',pin:'4–6 अंकों का PIN सेट करें',setPin:'PIN सेट / बदलें',removePin:'PIN हटाएँ',pinHint:'यह इसी डिवाइस का सामान्य लॉक है, क्लाउड सुरक्षा नहीं।',back:'← ग्राहक',totalPaid:'कुल भुगतान',totalCredit:'कुल उधार',balance:'बाकी रकम',newEntry:'नया लेन-देन जोड़ें',amount:'रकम',note:'नोट / विवरण (वैकल्पिक)',giveCredit:'＋ उधार दिया',receivePayment:'− भुगतान मिला',history:'लेन-देन की हिस्ट्री',editCustomer:'ग्राहक की जानकारी बदलें',deleteCustomer:'ग्राहक का खाता हटाएँ',noCustomers:'अभी कोई ग्राहक नहीं है। ऊपर पहला ग्राहक जोड़ें।',open:'खाता खोलें',due:'बाकी',noHistory:'अभी कोई लेन-देन नहीं है।',credit:'उधार दिया',payment:'भुगतान मिला',delete:'हटाएँ',confirmDeleteTxn:'क्या यह लेन-देन हटाना है?',confirmDeleteCustomer:'क्या इस ग्राहक और उसके सभी लेन-देन को हटाना है?',nameRequired:'कृपया ग्राहक का नाम लिखें।',amountRequired:'शून्य से अधिक सही रकम दर्ज करें।',pinSaved:'इस डिवाइस में PIN सेव हो गया।',pinRemoved:'PIN हटा दिया गया।',enterPin:'ऐप का PIN दर्ज करें',wrongPin:'गलत PIN।',editName:'ग्राहक का नया नाम',editPhone:'नया मोबाइल नंबर',cancel:'रद्द करें',ok:'ठीक है',restoreConfirm:'क्या मौजूदा रिकॉर्ड की जगह यह बैकअप रखना है?',restored:'बैकअप वापस आ गया।',badBackup:'बैकअप फ़ाइल सही नहीं है।',pinNeed:'4–6 अंकों का PIN दर्ज करें.'}
+;
+function t(k){return words[lang][k]||k}
+function readDB(){try{let d=JSON.parse(localStorage.getItem(KEY));return d&&Array.isArray(d.customers)?d:{customers:[]}}catch(e){return {customers:[]}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function cash(n){return '₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function totals(c){let paid=0,credit=0;c.txns.forEach(x=>x.type==='payment'?paid+=x.amount:credit+=x.amount);return {paid,credit,due:credit-paid}}
+function toggleLang(){lang=lang==='en'?'gu':(lang==='gu'?'hi':'en');localStorage.setItem('tk_lang',lang);applyLang();renderHome();if(active)renderLedger()}
+function applyLang(){document.documentElement.lang=lang;$('langBtn').textContent=lang==='en'?'ગુજરાતી':(lang==='gu'?'हिन्दी':'English');$('tagline').textContent=t('tagline');document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));document.querySelectorAll('[data-ph]').forEach(e=>e.placeholder=t(e.dataset.ph))}
+function addCustomer(){let name=$('custName').value.trim(),phone=$('custPhone').value.trim();if(!name)return alert(t('nameRequired'));db.customers.unshift({id:uid(),name,phone,txns:[]});save();$('custName').value='';$('custPhone').value='';renderHome()}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function renderHome(){let q=$('search').value.toLowerCase().trim(),arr=db.customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q));$('customerList').innerHTML=arr.length?arr.map(c=>{let z=totals(c);return `<div class="customer"><div class="meta"><strong>${esc(c.name)}</strong><div class="hint">${esc(c.phone||'')} · ${t('due')}: <b>${cash(z.due)}</b></div></div><button class="primary" onclick="openLedger('${c.id}')">${t('open')}</button></div>`}).join(''):`<div class="empty">${t('noCustomers')}</div>`}
+function openLedger(id){active=id;let c=getC();if(localStorage.getItem('tk_pin')){let p=prompt(t('enterPin'));if(p!==localStorage.getItem('tk_pin')){alert(t('wrongPin'));active=null;return}}$('home').classList.add('hidden');$('ledger').classList.remove('hidden');renderLedger()}
+function getC(){return db.customers.find(c=>c.id===active)}
+function goHome(){$('ledger').classList.add('hidden');$('home').classList.remove('hidden');active=null;renderHome()}
+function renderLedger(){let c=getC();if(!c)return goHome();let z=totals(c);$('ledgerName').textContent=c.name;$('ledgerPhone').textContent=c.phone||'';$('sumPaid').textContent=cash(z.paid);$('sumCredit').textContent=cash(z.credit);$('sumDue').textContent=cash(z.due);let a=[...c.txns].reverse();$('txnList').innerHTML=a.length?a.map(x=>`<div class="txn"><div class="meta"><b>${t(x.type==='credit'?'credit':'payment')}</b><div class="hint">${esc(x.note||'')} · ${esc(x.date)}</div></div><div style="text-align:right"><div class="amount ${x.type==='credit'?'credit':'payment'}">${x.type==='credit'?'+':'−'}${cash(x.amount)}</div><button class="soft" style="padding:6px 9px;margin-top:5px" onclick="deleteTxn('${x.id}')">${t('delete')}</button></div></div>`).join(''):`<div class="empty">${t('noHistory')}</div>`}
+function addTxn(type){let amount=Number($('txnAmount').value);if(!Number.isFinite(amount)||amount<=0)return alert(t('amountRequired'));getC().txns.push({id:uid(),type,amount,note:$('txnNote').value.trim(),date:new Date().toLocaleString(lang==='gu'?'gu-IN':'en-IN')});save();$('txnAmount').value='';$('txnNote').value='';renderLedger()}
+function deleteTxn(id){if(!confirm(t('confirmDeleteTxn')))return;let c=getC();c.txns=c.txns.filter(x=>x.id!==id);save();renderLedger()}
+function deleteCustomer(){if(!confirm(t('confirmDeleteCustomer')))return;db.customers=db.customers.filter(c=>c.id!==active);save();goHome()}
+function editCustomer(){let c=getC(),n=prompt(t('editName'),c.name);if(n===null)return;if(!n.trim())return alert(t('nameRequired'));let p=prompt(t('editPhone'),c.phone||'');if(p===null)return;c.name=n.trim();c.phone=p.trim();save();renderLedger()}
+function backup(){let b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='TallyKhata-backup.json';a.click();URL.revokeObjectURL(u)}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.customers))throw 0;if(!confirm(t('restoreConfirm')))return;db=x;save();renderHome();alert(t('restored'))}catch(_){alert(t('badBackup'))}};r.readAsText(f);e.target.value=''}
+function setPin(){let p=$('pinInput').value.trim();if(!/^\d{4,6}$/.test(p))return alert(t('pinNeed'));localStorage.setItem('tk_pin',p);$('pinInput').value='';alert(t('pinSaved'))}
+function removePin(){localStorage.removeItem('tk_pin');alert(t('pinRemoved'))}
+applyLang();renderHome();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body></html>
